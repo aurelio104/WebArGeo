@@ -5,7 +5,7 @@
       "en": "Point A"
     },
     "lat": 10.21389,
-    "lon": -67.576861,
+    "lon": -67.57675,
     "modelo": "assets/nina_2.glb"
   },
   {
@@ -13,8 +13,8 @@
       "es": "Punto B",
       "en": "Point B"
     },
-    "lat": 10.21392,
-    "lon": -67.57689,
+    "lat": 10.21391,
+    "lon": -67.57678,
     "modelo": "assets/car.glb"
   }
 ]

@@ -24,7 +24,7 @@
     "idioma_cambiado": "Language changed to English",
     "tus_coordenadas": "Your location",
     "ubicacion_error_permiso": "Location permission denied",
-    "ubicacion_error_fuente": "Could not determine your position",
-    "ubicacion_error_timeout": "Location request timed out"
+    "ubicacion_error_fuente": "Unable to determine position",
+    "ubicacion_error_timeout": "Location timeout expired"
   }
 }

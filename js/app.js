@@ -1,4 +1,4 @@
-// app.js con validación de modelos GLB, mejoras de geolocalización, radar y botón de reintento
+// app.js - Lógica WebAR GPS Multilenguaje con soporte 360°, radar y video de fondo
 
 let userCoords = { lat: 0, lon: 0 };
 let idioma = 'es';
@@ -7,7 +7,7 @@ let lang = {};
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
-  const toRad = (deg) => deg * Math.PI / 180;
+  const toRad = deg => deg * Math.PI / 180;
   const dLat = toRad(lat2 - lat1);
   const dLon = toRad(lon2 - lon1);
   const a = Math.sin(dLat / 2) ** 2 +
@@ -19,16 +19,10 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 function crearEntidad(punto) {
   const scene = document.querySelector('a-scene');
 
-  // ✅ Validar modelo antes de crear entidad
-  if (!punto.modelo || typeof punto.modelo !== 'string') {
-    console.warn('⚠️ Modelo no válido o faltante:', punto);
-    return;
-  }
-
   const modelo = document.createElement('a-entity');
   modelo.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
   modelo.setAttribute('gltf-model', punto.modelo);
-  modelo.setAttribute('scale', '0.5 0.5 0.5');
+  modelo.setAttribute('scale', '1 1 1');
   modelo.setAttribute('rotation', '0 180 0');
   modelo.setAttribute('animation-mixer', '');
 
@@ -36,7 +30,7 @@ function crearEntidad(punto) {
   etiqueta.setAttribute('value', `${punto.nombre[idioma]}\nCalculando...`);
   etiqueta.setAttribute('look-at', '[gps-camera]');
   etiqueta.setAttribute('position', '0 2 0');
-  etiqueta.setAttribute('scale', '10 10 10');
+  etiqueta.setAttribute('scale', '30 30 30');
   etiqueta.setAttribute('color', '#FFFFFF');
   etiqueta.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
 
@@ -100,42 +94,28 @@ function actualizarRadar() {
 
 function actualizarUI() {
   document.querySelector('#hud strong').innerText = lang[idioma]['titulo'];
-  document.querySelector('#btn-mostrar').innerText = lang[idioma]['mostrar_puntos'];
-  document.querySelector('#btn-centrar').innerText = lang[idioma]['centrar'];
-  document.querySelector('#btn-idioma').innerText = lang[idioma]['idioma'];
+  document.querySelector('#btn-mostrar span').innerText = lang[idioma]['mostrar_puntos'];
+  document.querySelector('#btn-centrar span').innerText = lang[idioma]['centrar'];
+  document.querySelector('#btn-idioma span').innerText = lang[idioma]['idioma'];
 }
 
-// ✅ Cámara con video como fondo
 navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
   .then(stream => {
     console.log('✅ Cámara activada correctamente');
     const video = document.getElementById('video-fondo');
-    if ('srcObject' in video) {
-      video.srcObject = stream;
-    } else {
-      video.src = window.URL.createObjectURL(stream);
-    }
+    if ('srcObject' in video) video.srcObject = stream;
+    else video.src = window.URL.createObjectURL(stream);
     video.onloadeddata = () => {
       video.play();
       const plano = document.createElement('a-entity');
       plano.setAttribute('geometry', 'primitive: plane; height: 100; width: 100');
-      plano.setAttribute('material', 'shader: flat; src: #video-fondo; side: double;');
+      plano.setAttribute('material', 'shader: flat; src: #video-fondo; side: double');
       plano.setAttribute('position', '0 0 -50');
-      plano.setAttribute('rotation', '0 0 0');
       document.querySelector('a-scene').appendChild(plano);
       console.log('🎥 Plano de video añadido a la escena');
     };
   })
   .catch(err => console.error('❌ Error al activar cámara:', err));
-
-// ✅ Forzar permisos de geolocalización en iOS
-if (typeof DeviceOrientationEvent !== 'undefined' &&
-    typeof DeviceOrientationEvent.requestPermission === 'function') {
-  window.addEventListener('click', () => {
-    DeviceOrientationEvent.requestPermission().catch(() => {}).then(() => {});
-    navigator.geolocation.getCurrentPosition(() => {}, () => {});
-  }, { once: true });
-}
 
 window.onload = async () => {
   try {
@@ -154,28 +134,26 @@ window.onload = async () => {
     console.error('No se pudo cargar puntos.json', e);
   }
 
-  navigator.geolocation.watchPosition((pos) => {
-    userCoords.lat = pos.coords.latitude;
-    userCoords.lon = pos.coords.longitude;
-    document.querySelector('#status').innerText = `Lat: ${userCoords.lat.toFixed(5)}, Lon: ${userCoords.lon.toFixed(5)}`;
-    const btnRetry = document.getElementById('btn-reintentar');
-    if (btnRetry) btnRetry.style.display = 'none';
-    actualizarDistancias();
-  }, (err) => {
-    console.warn('No se pudo obtener ubicación:', err);
-    let mensaje = '';
-    switch (err.code) {
-      case 1: mensaje = lang[idioma]['ubicacion_error_permiso']; break;
-      case 2: mensaje = lang[idioma]['ubicacion_error_fuente']; break;
-      case 3: mensaje = lang[idioma]['ubicacion_error_timeout']; break;
-      default: mensaje = lang[idioma]['ubicacion_error'];
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      userCoords.lat = pos.coords.latitude;
+      userCoords.lon = pos.coords.longitude;
+      document.querySelector('#status').innerText = `Lat: ${userCoords.lat.toFixed(5)}, Lon: ${userCoords.lon.toFixed(5)}`;
+      actualizarDistancias();
+    },
+    (err) => {
+      console.warn('No se pudo obtener ubicación:', err);
+      const status = document.querySelector('#status');
+      if (err.code === 1) status.innerText = lang[idioma]['ubicacion_error_permiso'];
+      else if (err.code === 2) status.innerText = lang[idioma]['ubicacion_error_fuente'];
+      else if (err.code === 3) status.innerText = lang[idioma]['ubicacion_error_timeout'];
+      else status.innerText = lang[idioma]['ubicacion_error'];
+      document.getElementById('btn-reintentar').style.display = 'inline-block';
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 20000,
+      maximumAge: 0
     }
-    document.querySelector('#status').innerText = mensaje;
-    const btnRetry = document.getElementById('btn-reintentar');
-    if (btnRetry) btnRetry.style.display = 'block';
-  }, {
-    enableHighAccuracy: true,
-    timeout: 30000,
-    maximumAge: 10000
-  });
+  );
 };

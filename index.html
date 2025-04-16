@@ -13,35 +13,26 @@
   <link rel="stylesheet" href="css/style.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
 
-  <style>
-    a-scene {
-      pointer-events: none;
-    }
-    #tap-para-iniciar {
-      pointer-events: auto !important;
-    }
-  </style>
-
   <!-- A-Frame + AR -->
   <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
   <script src="js/arjs-gps-custom.js"></script>
   <script src="https://unpkg.com/aframe-look-at-component@0.8.0/dist/aframe-look-at-component.min.js"></script>
 
-  <!-- Lógica principal -->
+  <!-- App logic -->
   <script src="js/app.js" defer></script>
 </head>
 
 <body>
-  <!-- Video de fondo -->
-  <video id="video-fondo" autoplay playsinline webkit-playsinline style="display: none;"></video>
+  <!-- Video de fondo (cámara en vivo) -->
+  <video id="video-fondo" autoplay playsinline webkit-playsinline muted style="display: none;"></video>
 
-  <!-- UI HUD -->
+  <!-- HUD -->
   <div id="hud">
     <div><strong>GPS WebAR</strong></div>
     <div id="status">Buscando ubicación...</div>
   </div>
 
-  <!-- Botones UI -->
+  <!-- UI Botones -->
   <div id="botones">
     <button id="btn-mostrar" class="boton-ui" onclick="mostrarTodos()">
       <i class="fas fa-map-marker-alt"></i> <span>Ver todos</span>
@@ -67,59 +58,29 @@
     <a-camera gps-camera rotation-reader></a-camera>
   </a-scene>
 
-  <!-- Overlay para forzar interacción -->
-  <div id="tap-para-iniciar" style="
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.85);
-    color: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    pointer-events: auto;
-    font-size: 18px;
-    text-align: center;
-    padding: 20px;
-  ">
-    📍 Toca la pantalla para activar ubicación y cámara
+  <!-- Overlay inicial -->
+  <div id="tap-para-iniciar">
+    📍 Toca la pantalla para activar cámara y ubicación
   </div>
-
+  
   <!-- Activación forzada -->
   <script>
+    const iniciarPermisos = () => {
+      const overlay = document.getElementById('tap-para-iniciar');
+      if (overlay) overlay.remove();
+
+      // iOS - Solicitar orientación
+      if (typeof DeviceOrientationEvent !== 'undefined' &&
+          typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().catch(() => {}).then(() => {});
+      }
+
+      // Activar pointerEvents para escena
+      document.querySelector('a-scene').style.pointerEvents = 'auto';
+    };
+
     ['click', 'touchstart'].forEach(evt => {
-      window.addEventListener(evt, () => {
-        const overlay = document.getElementById('tap-para-iniciar');
-        if (overlay) overlay.remove();
-
-        if (typeof DeviceOrientationEvent !== 'undefined' &&
-            typeof DeviceOrientationEvent.requestPermission === 'function') {
-          DeviceOrientationEvent.requestPermission().catch(() => {}).then(() => {});
-        }
-
-        navigator.geolocation.watchPosition(
-          (pos) => {
-            const lat = pos.coords.latitude.toFixed(5);
-            const lon = pos.coords.longitude.toFixed(5);
-            document.getElementById('status').innerText = `Lat: ${lat}, Lon: ${lon}`;
-            console.log('📍 Ubicación desde interacción:', lat, lon);
-          },
-          (err) => {
-            console.warn('❌ Error tras toque:', err);
-            document.getElementById('status').innerText = "Error al obtener ubicación (interacción)";
-          },
-          {
-            enableHighAccuracy: true,
-            timeout: 20000,
-            maximumAge: 0
-          }
-        );
-
-        document.querySelector('a-scene').style.pointerEvents = 'auto';
-      }, { once: true });
+      window.addEventListener(evt, iniciarPermisos, { once: true });
     });
   </script>
 </body>
