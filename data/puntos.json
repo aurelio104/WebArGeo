@@ -1,30 +1,20 @@
 [
-    {
-      "nombre": {
-        "es": "Punto A",
-        "en": "Point A"
-      },
-      "lat": 10.21389,
-      "lon": -67.57667,
-      "modelo": "assets/nina_2.glb"
+  {
+    "nombre": {
+      "es": "Punto A",
+      "en": "Point A"
     },
-    {
-      "nombre": {
-        "es": "Punto B",
-        "en": "Point B"
-      },
-      "lat": 10.21410,
-      "lon": -67.57700,
-      "modelo": "assets/nina_2.glb"
+    "lat": 10.21389,
+    "lon": -67.576861,
+    "modelo": "assets/nina_2.glb"
+  },
+  {
+    "nombre": {
+      "es": "Punto B",
+      "en": "Point B"
     },
-    {
-      "nombre": {
-        "es": "Punto C",
-        "en": "Point C"
-      },
-      "lat": 10.21450,
-      "lon": -67.57580,
-      "modelo": "assets/nina_2.glb"
-    }
-  ]
-  
+    "lat": 10.21392,
+    "lon": -67.57689,
+    "modelo": "assets/car.glb"
+  }
+]

@@ -28,7 +28,7 @@ function crearEntidad(punto) {
   const modelo = document.createElement('a-entity');
   modelo.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
   modelo.setAttribute('gltf-model', punto.modelo);
-  modelo.setAttribute('scale', '1 1 1');
+  modelo.setAttribute('scale', '0.5 0.5 0.5');
   modelo.setAttribute('rotation', '0 180 0');
   modelo.setAttribute('animation-mixer', '');
 
@@ -36,7 +36,7 @@ function crearEntidad(punto) {
   etiqueta.setAttribute('value', `${punto.nombre[idioma]}\nCalculando...`);
   etiqueta.setAttribute('look-at', '[gps-camera]');
   etiqueta.setAttribute('position', '0 2 0');
-  etiqueta.setAttribute('scale', '30 30 30');
+  etiqueta.setAttribute('scale', '10 10 10');
   etiqueta.setAttribute('color', '#FFFFFF');
   etiqueta.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
 
