@@ -1,0 +1,30 @@
+{
+  "es": {
+    "titulo": "GPS WebAR",
+    "buscando": "Buscando ubicación...",
+    "mostrar_puntos": "Ver todos los puntos",
+    "centrar": "Centrar",
+    "idioma": "Idioma",
+    "mostrando": "Mostrando todos los puntos",
+    "ubicacion_error": "Error al obtener ubicación",
+    "idioma_cambiado": "Idioma cambiado a Español",
+    "tus_coordenadas": "Tu ubicación",
+    "ubicacion_error_permiso": "Permiso de ubicación denegado",
+    "ubicacion_error_fuente": "No se pudo determinar tu posición",
+    "ubicacion_error_timeout": "Tiempo de espera agotado"
+  },
+  "en": {
+    "titulo": "GPS WebAR",
+    "buscando": "Locating...",
+    "mostrar_puntos": "Show all locations",
+    "centrar": "Center",
+    "idioma": "Language",
+    "mostrando": "Showing all locations",
+    "ubicacion_error": "Error retrieving location",
+    "idioma_cambiado": "Language changed to English",
+    "tus_coordenadas": "Your location",
+    "ubicacion_error_permiso": "Location permission denied",
+    "ubicacion_error_fuente": "Could not determine your position",
+    "ubicacion_error_timeout": "Location request timed out"
+  }
+}

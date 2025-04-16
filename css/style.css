@@ -1,0 +1,129 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Roboto, sans-serif;
+  background: #000; /* 🔍 asegúrate de que no sea blanco */
+}
+
+/* 🔒 Evita que A-Frame o elementos DOM tapen la cámara */
+canvas, a-scene {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+/* HUD encima de todo */
+#hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 20;
+  background: rgba(0, 0, 0, 0.7);
+  padding: 12px 16px;
+  border-radius: 10px;
+  color: white;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  font-size: 14px;
+}
+
+#botones {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  gap: 12px;
+}
+
+.boton-ui {
+  background: linear-gradient(135deg, #2196f3, #1e88e5);
+  border: none;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 50px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, background 0.3s;
+}
+
+.boton-ui:hover {
+  background: linear-gradient(135deg, #42a5f5, #2196f3);
+  transform: scale(1.05);
+}
+
+#minimapa {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  width: 150px;
+  height: 150px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid #fff;
+  border-radius: 50%;
+  z-index: 20;
+  overflow: hidden;
+  box-shadow: 0 0 6px rgba(255, 255, 255, 0.3);
+}
+
+.punto-radar {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: #ff5252;
+  border-radius: 50%;
+  box-shadow: 0 0 4px #ff8a80;
+}
+
+.yo-radar {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #00e676;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0 4px #69f0ae;
+}
+
+/* Ajustes móviles */
+@media (max-width: 768px) {
+  #botones {
+    flex-direction: column;
+    gap: 8px;
+    bottom: 10px;
+  }
+
+  .boton-ui {
+    width: 90vw;
+    text-align: center;
+    font-size: 16px;
+  }
+
+  #hud {
+    font-size: 12px;
+    padding: 8px;
+    top: 5px;
+    left: 5px;
+  }
+
+  #minimapa {
+    width: 120px;
+    height: 120px;
+    bottom: 5px;
+    right: 5px;
+  }
+}
+
+/* Fijar capas UI arriba del canvas */
+#botones, #hud, #minimapa {
+  position: fixed;
+  z-index: 100;
+  pointer-events: auto;
+}
