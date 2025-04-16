@@ -1,9 +1,11 @@
-// app.js - Cámara natural con video HTML, radar optimizado y entidades GPS
+// app.js - Carga automática de modelos al iniciar, cámara natural, radar direccional activo y botón eliminado
 
 let userCoords = { lat: 0, lon: 0 };
+let userHeading = 0;
 let idioma = 'es';
 let puntos = [];
 let lang = {};
+let yaMostrados = false;
 
 function haversineDistance(lat1, lon1, lat2, lon2) {
   const R = 6371000;
@@ -64,11 +66,6 @@ function actualizarDistancias() {
   actualizarRadar();
 }
 
-function mostrarTodos() {
-  document.querySelector('#status').innerText = lang[idioma]['mostrando'];
-  puntos.forEach(crearEntidad);
-}
-
 function centrarUsuario() {
   alert(`${lang[idioma]['tus_coordenadas']}:\nLat: ${userCoords.lat}\nLon: ${userCoords.lon}`);
 }
@@ -99,8 +96,10 @@ function actualizarRadar() {
     let punto = existentes[id];
 
     if (distancia <= maxRango) {
-      const x = dx * escala;
-      const y = -dz * escala;
+      const angle = Math.atan2(dz, dx);
+      const adjusted = angle - (userHeading * Math.PI / 180);
+      const x = Math.cos(adjusted) * distancia * escala;
+      const y = Math.sin(adjusted) * distancia * escala;
 
       if (!punto) {
         punto = document.createElement('div');
@@ -110,7 +109,7 @@ function actualizarRadar() {
       }
 
       punto.style.left = `${75 + x}px`;
-      punto.style.top = `${75 + y}px`;
+      punto.style.top = `${75 - y}px`;
     } else if (punto) {
       punto.remove();
     }
@@ -119,9 +118,10 @@ function actualizarRadar() {
 
 function actualizarUI() {
   document.querySelector('#hud strong').innerText = lang[idioma]['titulo'];
-  document.querySelector('#btn-mostrar span').innerText = lang[idioma]['mostrar_puntos'];
   document.querySelector('#btn-centrar span').innerText = lang[idioma]['centrar'];
   document.querySelector('#btn-idioma span').innerText = lang[idioma]['idioma'];
+  const btnMostrar = document.getElementById('btn-mostrar');
+  if (btnMostrar) btnMostrar.style.display = 'none';
 }
 
 navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
@@ -133,6 +133,13 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     video.onloadeddata = () => video.play();
   })
   .catch(err => console.error('❌ Error al activar cámara:', err));
+
+window.addEventListener("deviceorientationabsolute", (e) => {
+  if (e.absolute && e.alpha != null) {
+    userHeading = e.alpha;
+    actualizarRadar();
+  }
+});
 
 window.onload = async () => {
   try {
@@ -188,6 +195,12 @@ window.onload = async () => {
       userCoords.lat = pos.coords.latitude;
       userCoords.lon = pos.coords.longitude;
       document.querySelector('#status').innerText = `Lat: ${userCoords.lat.toFixed(5)}, Lon: ${userCoords.lon.toFixed(5)}`;
+
+      if (!yaMostrados && puntos.length > 0) {
+        puntos.forEach(crearEntidad);
+        yaMostrados = true;
+      }
+
       actualizarDistancias();
     },
     (err) => {
