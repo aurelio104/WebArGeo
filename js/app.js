@@ -1,4 +1,4 @@
-// app.js - Lógica WebAR GPS Multilenguaje con soporte 360°, radar y video de fondo
+// app.js - Cámara natural con video HTML, radar optimizado y entidades GPS
 
 let userCoords = { lat: 0, lon: 0 };
 let idioma = 'es';
@@ -19,12 +19,23 @@ function haversineDistance(lat1, lon1, lat2, lon2) {
 function crearEntidad(punto) {
   const scene = document.querySelector('a-scene');
 
+  const contenedor = document.createElement('a-entity');
+  contenedor.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
+
   const modelo = document.createElement('a-entity');
-  modelo.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
   modelo.setAttribute('gltf-model', punto.modelo);
   modelo.setAttribute('scale', '1 1 1');
   modelo.setAttribute('rotation', '0 180 0');
   modelo.setAttribute('animation-mixer', '');
+
+  modelo.addEventListener('model-error', () => {
+    const advertencia = document.createElement('a-text');
+    advertencia.setAttribute('value', '⚠️ Modelo no cargado');
+    advertencia.setAttribute('position', '0 1 0');
+    advertencia.setAttribute('scale', '20 20 20');
+    advertencia.setAttribute('color', 'red');
+    contenedor.appendChild(advertencia);
+  });
 
   const etiqueta = document.createElement('a-text');
   etiqueta.setAttribute('value', `${punto.nombre[idioma]}\nCalculando...`);
@@ -32,13 +43,14 @@ function crearEntidad(punto) {
   etiqueta.setAttribute('position', '0 2 0');
   etiqueta.setAttribute('scale', '30 30 30');
   etiqueta.setAttribute('color', '#FFFFFF');
-  etiqueta.setAttribute('gps-entity-place', `latitude: ${punto.lat}; longitude: ${punto.lon}`);
 
-  scene.appendChild(modelo);
-  scene.appendChild(etiqueta);
+  contenedor.appendChild(modelo);
+  contenedor.appendChild(etiqueta);
+  scene.appendChild(contenedor);
 
   punto.etiqueta = etiqueta;
   punto.modelo = modelo;
+  punto.contenedor = contenedor;
 }
 
 function actualizarDistancias() {
@@ -70,24 +82,37 @@ function cambiarIdioma() {
 
 function actualizarRadar() {
   const radar = document.querySelector('#minimapa');
-  radar.querySelectorAll('.punto-radar').forEach(el => el.remove());
+  const escala = 75 / 100;
+  const maxRango = 100;
 
-  puntos.forEach(p => {
+  const existentes = {};
+  radar.querySelectorAll('.punto-radar').forEach(el => {
+    existentes[el.dataset.id] = el;
+  });
+
+  puntos.forEach((p, i) => {
     const dx = (p.lon - userCoords.lon) * 111320 * Math.cos(userCoords.lat * Math.PI / 180);
     const dz = (p.lat - userCoords.lat) * 110540;
     const distancia = Math.sqrt(dx * dx + dz * dz);
 
-    const maxRango = 100;
+    const id = `punto-${i}`;
+    let punto = existentes[id];
+
     if (distancia <= maxRango) {
-      const escala = 75 / maxRango;
       const x = dx * escala;
       const y = -dz * escala;
 
-      const punto = document.createElement('div');
-      punto.className = 'punto-radar';
+      if (!punto) {
+        punto = document.createElement('div');
+        punto.className = 'punto-radar';
+        punto.dataset.id = id;
+        radar.appendChild(punto);
+      }
+
       punto.style.left = `${75 + x}px`;
       punto.style.top = `${75 + y}px`;
-      radar.appendChild(punto);
+    } else if (punto) {
+      punto.remove();
     }
   });
 }
@@ -105,15 +130,7 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
     const video = document.getElementById('video-fondo');
     if ('srcObject' in video) video.srcObject = stream;
     else video.src = window.URL.createObjectURL(stream);
-    video.onloadeddata = () => {
-      video.play();
-      const plano = document.createElement('a-entity');
-      plano.setAttribute('geometry', 'primitive: plane; height: 100; width: 100');
-      plano.setAttribute('material', 'shader: flat; src: #video-fondo; side: double');
-      plano.setAttribute('position', '0 0 -50');
-      document.querySelector('a-scene').appendChild(plano);
-      console.log('🎥 Plano de video añadido a la escena');
-    };
+    video.onloadeddata = () => video.play();
   })
   .catch(err => console.error('❌ Error al activar cámara:', err));
 
@@ -121,17 +138,49 @@ window.onload = async () => {
   try {
     const resLang = await fetch('i18n/lang.json');
     lang = await resLang.json();
-    actualizarUI();
-    document.querySelector('#status').innerText = lang[idioma]['buscando'];
   } catch (e) {
     console.warn('No se pudo cargar lang.json', e);
+    lang = {
+      es: {
+        titulo: "GPS WebAR",
+        buscando: "Buscando ubicación...",
+        mostrar_puntos: "Ver puntos",
+        centrar: "Centrar",
+        idioma: "Idioma",
+        mostrando: "Mostrando puntos",
+        idioma_cambiado: "Idioma cambiado",
+        ubicacion_error: "Ubicación no disponible",
+        ubicacion_error_permiso: "Permiso denegado",
+        ubicacion_error_fuente: "Error de origen",
+        ubicacion_error_timeout: "Tiempo agotado",
+        tus_coordenadas: "Coordenadas"
+      },
+      en: {
+        titulo: "GPS WebAR",
+        buscando: "Locating...",
+        mostrar_puntos: "Show points",
+        centrar: "Center",
+        idioma: "Language",
+        mostrando: "Showing points",
+        idioma_cambiado: "Language changed",
+        ubicacion_error: "Location error",
+        ubicacion_error_permiso: "Permission denied",
+        ubicacion_error_fuente: "Position unavailable",
+        ubicacion_error_timeout: "Timeout expired",
+        tus_coordenadas: "Your coordinates"
+      }
+    };
   }
+
+  actualizarUI();
+  document.querySelector('#status').innerText = lang[idioma]['buscando'];
 
   try {
     const res = await fetch('data/puntos.json');
     puntos = await res.json();
   } catch (e) {
     console.error('No se pudo cargar puntos.json', e);
+    puntos = [];
   }
 
   navigator.geolocation.watchPosition(

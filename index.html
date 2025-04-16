@@ -24,7 +24,7 @@
 
 <body>
   <!-- Video de fondo (cámara en vivo) -->
-  <video id="video-fondo" autoplay playsinline webkit-playsinline muted style="display: none;"></video>
+  <video id="video-fondo" autoplay playsinline webkit-playsinline muted></video>
 
   <!-- HUD -->
   <div id="hud">
@@ -58,29 +58,53 @@
     <a-camera gps-camera rotation-reader></a-camera>
   </a-scene>
 
-  <!-- Overlay inicial -->
+  <!-- Overlay inicial mejorado -->
   <div id="tap-para-iniciar">
-    📍 Toca la pantalla para activar cámara y ubicación
+    <div>
+      📍 Esta experiencia usa tu ubicación para mostrar contenido cercano.<br><br>
+      <button id="btn-iniciar-permisos">Tocar para activar</button><br><br>
+      <small id="ayuda-ubicacion">
+        🔒 Si no ves tu ubicación, revisa los permisos en la configuración de tu navegador.
+      </small>
+    </div>
   </div>
-  
-  <!-- Activación forzada -->
+
+  <!-- Activación forzada y permisos -->
   <script>
-    const iniciarPermisos = () => {
+    const ayuda = document.getElementById('ayuda-ubicacion');
+    const ua = navigator.userAgent.toLowerCase();
+    if (ua.includes('iphone') || ua.includes('ipad')) {
+      ayuda.innerHTML = `
+        <strong>📱 iPhone:</strong><br>
+        🔒 Configuración &gt; Safari &gt; Ubicación`;
+    } else if (ua.includes('android')) {
+      ayuda.innerHTML = `
+        <strong>🤖 Android:</strong><br>
+        🔒 Ajustes &gt; Apps &gt; Navegador &gt; Permisos &gt; Ubicación`;
+    }
+
+    document.getElementById('btn-iniciar-permisos').addEventListener('click', () => {
       const overlay = document.getElementById('tap-para-iniciar');
       if (overlay) overlay.remove();
 
-      // iOS - Solicitar orientación
+      // iOS: solicitar permiso de orientación
       if (typeof DeviceOrientationEvent !== 'undefined' &&
           typeof DeviceOrientationEvent.requestPermission === 'function') {
         DeviceOrientationEvent.requestPermission().catch(() => {}).then(() => {});
       }
 
-      // Activar pointerEvents para escena
+      // Reactivar eventos de escena
       document.querySelector('a-scene').style.pointerEvents = 'auto';
-    };
 
-    ['click', 'touchstart'].forEach(evt => {
-      window.addEventListener(evt, iniciarPermisos, { once: true });
+      // Intentar solicitar ubicación
+      navigator.geolocation.getCurrentPosition(
+        () => console.log("📍 Permiso de ubicación concedido"),
+        (err) => {
+          console.warn("⚠️ Permiso denegado o error:", err);
+          alert("No se pudo acceder a tu ubicación. Por favor revisa los permisos en Configuración.");
+        },
+        { enableHighAccuracy: true }
+      );
     });
   </script>
 </body>
