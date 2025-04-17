@@ -1,4 +1,4 @@
-// app.js - Carga automática de modelos al iniciar, cámara natural, radar direccional activo y botón eliminado
+// app.js - Carga automática, radar direccional y botón centrar que actualiza ubicación
 
 let userCoords = { lat: 0, lon: 0 };
 let userHeading = 0;
@@ -26,7 +26,7 @@ function crearEntidad(punto) {
 
   const modelo = document.createElement('a-entity');
   modelo.setAttribute('gltf-model', punto.modelo);
-  modelo.setAttribute('scale', '1 1 1');
+  modelo.setAttribute('scale', '3 3 3');
   modelo.setAttribute('rotation', '0 180 0');
   modelo.setAttribute('animation-mixer', '');
 
@@ -44,7 +44,7 @@ function crearEntidad(punto) {
   etiqueta.setAttribute('look-at', '[gps-camera]');
   etiqueta.setAttribute('position', '0 2 0');
   etiqueta.setAttribute('scale', '30 30 30');
-  etiqueta.setAttribute('color', '#FFFFFF');
+  etiqueta.setAttribute('color', '#00FF00');
 
   contenedor.appendChild(modelo);
   contenedor.appendChild(etiqueta);
@@ -67,7 +67,30 @@ function actualizarDistancias() {
 }
 
 function centrarUsuario() {
-  alert(`${lang[idioma]['tus_coordenadas']}:\nLat: ${userCoords.lat}\nLon: ${userCoords.lon}`);
+  if (!navigator.geolocation) {
+    alert("Geolocalización no soportada");
+    return;
+  }
+
+  document.querySelector('#status').innerText = lang[idioma]['buscando'];
+
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      userCoords.lat = pos.coords.latitude;
+      userCoords.lon = pos.coords.longitude;
+      document.querySelector('#status').innerText = `Lat: ${userCoords.lat.toFixed(5)}, Lon: ${userCoords.lon.toFixed(5)}`;
+      alert(`${lang[idioma]['tus_coordenadas']}:\nLat: ${userCoords.lat}\nLon: ${userCoords.lon}`);
+      actualizarDistancias();
+    },
+    () => {
+      alert(lang[idioma]['ubicacion_error']);
+    },
+    {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    }
+  );
 }
 
 function cambiarIdioma() {
@@ -134,12 +157,29 @@ navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
   })
   .catch(err => console.error('❌ Error al activar cámara:', err));
 
-window.addEventListener("deviceorientationabsolute", (e) => {
-  if (e.absolute && e.alpha != null) {
-    userHeading = e.alpha;
-    actualizarRadar();
+// Activación de orientación para iOS
+window.addEventListener('click', () => {
+  if (typeof DeviceOrientationEvent !== 'undefined' &&
+      typeof DeviceOrientationEvent.requestPermission === 'function') {
+    DeviceOrientationEvent.requestPermission().then(response => {
+      if (response === 'granted') {
+        window.addEventListener('deviceorientationabsolute', (e) => {
+          if (e.absolute && e.alpha != null) {
+            userHeading = e.alpha;
+            actualizarRadar();
+          }
+        });
+      }
+    }).catch(console.error);
+  } else {
+    window.addEventListener('deviceorientationabsolute', (e) => {
+      if (e.absolute && e.alpha != null) {
+        userHeading = e.alpha;
+        actualizarRadar();
+      }
+    });
   }
-});
+}, { once: true });
 
 window.onload = async () => {
   try {
