@@ -126,6 +126,24 @@ a-scene, canvas {
   box-shadow: 0 0 4px #69f0ae;
 }
 
+/* Flecha guía al punto más cercano */
+#flecha-guia {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  font-size: 24px;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 30px;
+  pointer-events: none;
+  text-align: center;
+  font-weight: bold;
+  backdrop-filter: blur(3px);
+}
+
 /* Overlay pantalla completa (toca para iniciar) */
 #tap-para-iniciar {
   position: fixed;

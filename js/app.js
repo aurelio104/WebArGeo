@@ -1,4 +1,4 @@
-// app.js - Carga automática, radar direccional y botón centrar que actualiza ubicación
+// app.js - Carga automática, radar direccional y flecha guía al punto más cercano
 
 let userCoords = { lat: 0, lon: 0 };
 let userHeading = 0;
@@ -56,14 +56,23 @@ function crearEntidad(punto) {
 }
 
 function actualizarDistancias() {
+  let menorDistancia = Infinity;
+  let objetivoCercano = null;
+
   puntos.forEach(p => {
     const d = haversineDistance(userCoords.lat, userCoords.lon, p.lat, p.lon);
     if (p.etiqueta) {
       p.etiqueta.setAttribute('value', `${p.nombre[idioma]}\n${d} m`);
       p.etiqueta.setAttribute('color', d < 20 ? '#00FF00' : '#FF4444');
     }
+    if (d < menorDistancia) {
+      menorDistancia = d;
+      objetivoCercano = p;
+    }
   });
+
   actualizarRadar();
+  actualizarFlechaGuia(objetivoCercano);
 }
 
 function centrarUsuario() {
@@ -139,6 +148,19 @@ function actualizarRadar() {
   });
 }
 
+function actualizarFlechaGuia(punto) {
+  const flecha = document.getElementById('flecha-guia');
+  if (!flecha || !punto) return;
+
+  const dx = (punto.lon - userCoords.lon) * 111320 * Math.cos(userCoords.lat * Math.PI / 180);
+  const dz = (punto.lat - userCoords.lat) * 110540;
+  const angle = Math.atan2(dz, dx) * (180 / Math.PI);
+  const relativeAngle = (angle - userHeading + 360) % 360;
+
+  flecha.style.transform = `rotate(${relativeAngle}deg)`;
+  flecha.innerText = `🧭 ${punto.nombre[idioma]} →`;
+}
+
 function actualizarUI() {
   document.querySelector('#hud strong').innerText = lang[idioma]['titulo'];
   document.querySelector('#btn-centrar span').innerText = lang[idioma]['centrar'];
@@ -167,6 +189,7 @@ window.addEventListener('click', () => {
           if (e.absolute && e.alpha != null) {
             userHeading = e.alpha;
             actualizarRadar();
+            actualizarDistancias();
           }
         });
       }
@@ -176,6 +199,7 @@ window.addEventListener('click', () => {
       if (e.absolute && e.alpha != null) {
         userHeading = e.alpha;
         actualizarRadar();
+        actualizarDistancias();
       }
     });
   }
